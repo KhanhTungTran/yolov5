@@ -24,54 +24,61 @@ ap.add_argument("-c", "--correct", type=int, default=1,
 args = vars(ap.parse_args())
 
 # TODO: loop through watermarks in watermarks directory, split for training (0.8) and testing (0.2)
-# load the watermark image, making sure we retain the 4th channel
-# which contains the alpha transparency
-watermark = cv2.imread(args["watermark"], cv2.IMREAD_UNCHANGED)
-(wH, wW) = watermark.shape[:2]
-
-cv2.imshow("watermark", watermark)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-if args["correct"] > 0:
-	(B, G, R, A) = cv2.split(watermark)
-	B = cv2.bitwise_and(B, B, mask=A)
-	G = cv2.bitwise_and(G, G, mask=A)
-	R = cv2.bitwise_and(R, R, mask=A)
-	watermark = cv2.merge([B, G, R, A])
-
-not_trans_mask = watermark[:, :, 3] != 0
-watermark[not_trans_mask] = [255, 255, 255, 255]
-
-# TODO: random input images
-# loop over the input images
-for image_path in paths.list_images(args["input"]):
-	# load the input image, then add an extra dimension to the
-	# image (i.e., the alpha transparency)
-	image = cv2.imread(image_path)
-	(h, w) = image.shape[:2]
-	image = np.dstack([image, np.ones((h, w), dtype="uint8") * 255])
-	# construct an overlay that is the same size as the input
-	# image, (using an extra dimension for the alpha transparency),
-	# then add the watermark to the overlay in the bottom-right
-	# corner
-	overlay = np.zeros((h, w, 4), dtype="uint8")
-
-    # NOTE: random size of watermark and random location
-	new_width = randint(20, 200)
-	watermark = resize(watermark, new_width=100)
+for watermark_path in paths.list_images(args["watermark"]):
+	# load the watermark image, making sure we retain the 4th channel
+	# which contains the alpha transparency
+	watermark = cv2.imread(watermark_path, cv2.IMREAD_UNCHANGED)
 	(wH, wW) = watermark.shape[:2]
-	y_center = randint(int(wH/2), h-int(wH/2)-1), x_center = randint(int(wW/2), h-int(wW/2)-1)
-	overlay[y_center - int(wH/2):y_center + int(wH/2), x_center - int(wW/2):x_center + int(wW/2)] = watermark
-	# blend the two images together using transparent overlays
-	output = image.copy()
 
-    # NOTE: Random alpha
-	alpha = uniform(0.1, 0.9)
-	cv2.addWeighted(overlay, alpha, output, 1.0, 0, output)
+	cv2.imshow("watermark", watermark)
+	cv2.waitKey(0)
+	cv2.destroyAllWindows()
 
-	# write the output image to disk
-	file_name = image_path[image_path.rfind(os.path.sep) + 1:]
-	p = os.path.sep.join((args["output_image"], file_name))
-	cv2.imwrite(p, output)
-    # NOTE: write label to the label directory
-	label = " ".join('0', format(x_center/w), format(wW/w), format(y_center/h), format(wH/h))
+	if args["correct"] > 0:
+		(B, G, R, A) = cv2.split(watermark)
+		B = cv2.bitwise_and(B, B, mask=A)
+		G = cv2.bitwise_and(G, G, mask=A)
+		R = cv2.bitwise_and(R, R, mask=A)
+		watermark = cv2.merge([B, G, R, A])
+
+	not_trans_mask = watermark[:, :, 3] != 0
+	watermark[not_trans_mask] = [255, 255, 255, 255]
+
+	# NOTE: random input images
+	list_images_path = [format(randint(1, 17125), '07d') + '.png' for _ in range(750)]
+	# loop over the input images
+	for image_path in list_images_path:
+		# load the input image, then add an extra dimension to the
+		# image (i.e., the alpha transparency)
+		image = cv2.imread(args["input"] + '/' + image_path)
+		(h, w) = image.shape[:2]
+		image = np.dstack([image, np.ones((h, w), dtype="uint8") * 255])
+		# construct an overlay that is the same size as the input
+		# image, (using an extra dimension for the alpha transparency),
+		# then add the watermark to the overlay in the bottom-right
+		# corner
+		overlay = np.zeros((h, w, 4), dtype="uint8")
+
+		# NOTE: random size of watermark and random location
+		new_width = randint(20, 200)
+		watermark = resize(watermark, new_width=100)
+		(wH, wW) = watermark.shape[:2]
+		y_center = randint(int(wH/2), h-int(wH/2)-1), x_center = randint(int(wW/2), h-int(wW/2)-1)
+		overlay[y_center - int(wH/2):y_center + int(wH/2), x_center - int(wW/2):x_center + int(wW/2)] = watermark
+		# blend the two images together using transparent overlays
+		output = image.copy()
+
+		# NOTE: Random alpha
+		alpha = uniform(0.1, 0.9)
+		cv2.addWeighted(overlay, alpha, output, 1.0, 0, output)
+
+		# write the output image to disk
+		image_file_name = format(count, '07d') + ".png"
+		label_file_name = format(count, '07d') + ".txt"
+		p = os.path.sep.join((args["output_image"], image_file_name))
+		cv2.imwrite(p, output)
+		# NOTE: write label to the label directory
+		label = " ".join('0', format(x_center/w), format(wW/w), format(y_center/h), format(wH/h))
+		f = open(os.path.sep.join((args["output_label"], label_file_name)))
+		f.write(label)
+		f.close()
