@@ -25,9 +25,9 @@ ap.add_argument("-c", "--correct", type=int, default=1,
 	help="flag used to handle if bug is displayed or not")
 args = vars(ap.parse_args())
 
-count = 28501
+count = 1
 # TODO: loop through watermarks in watermarks directory, split for training (0.8) and testing (0.2)
-for watermark_path in list(paths.list_images(args["watermark"]))[38:]:
+for watermark_path in list(paths.list_images(args["watermark"])):
 	print(watermark_path)
 	# load the watermark image, making sure we retain the 4th channel
 	# which contains the alpha transparency
@@ -88,7 +88,7 @@ for watermark_path in list(paths.list_images(args["watermark"]))[38:]:
 		p = os.path.sep.join((args["output_image"], image_file_name))
 		cv2.imwrite(p, output)
 		# NOTE: write label to the label directory
-		label = " ".join(['0', format(x_center/w, '.6f'), format(wW/w, '.6f'), format(y_center/h, '.6f'), format(wH/h, '.6f')])
+		label = " ".join(['0', format(x_center/w, '.6f'), format(y_center/h, '.6f'), format(wW/w, '.6f'), format(wH/h, '.6f')])
 		f = open(os.path.sep.join((args["output_label"], label_file_name)), 'w')
 		f.write(label)
 		f.close()

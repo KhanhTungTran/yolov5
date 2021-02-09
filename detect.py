@@ -91,6 +91,7 @@ def detect(save_img=False):
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
             s += '%gx%g ' % img.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+            watermarks = []
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
@@ -110,7 +111,7 @@ def detect(save_img=False):
 
                     if save_img or view_img:  # Add bbox to image
                         label = f'{names[int(cls)]} {conf:.2f}'
-                        plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
+                        watermarks.append(plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3))
 
             # Print time (inference + NMS)
             print(f'{s}Done. ({t2 - t1:.3f}s)')
@@ -122,7 +123,10 @@ def detect(save_img=False):
             # Save results (image with detections)
             if save_img:
                 if dataset.mode == 'image':
-                    cv2.imwrite(save_path, im0)
+                    orig = cv2.imread('data/images/original/'+save_path[save_path.rfind('\\')+1:])
+                    for j, (c1, c2) in enumerate(watermarks):
+                        cv2.imwrite(save_path[:-4]+'_'+format(j, '03d')+'.jpg', im0[c1[1]:c2[1], c1[0]:c2[0]])
+                        cv2.imwrite('data/images/crops/'+save_path[save_path.rfind('\\')+1:-4]+'_'+format(j, '03d')+'.jpg', orig[c1[1]:c2[1], c1[0]:c2[0]])
                 else:  # 'video'
                     if vid_path != save_path:  # new video
                         vid_path = save_path
