@@ -16,7 +16,7 @@ ap.add_argument('-w', '--watermark', required=True,
 ap.add_argument('-i', '--input', required=True,
     help="path to the input directory of images")
 ap.add_argument('-oo', '--output_original', required=True,
-    help="path to the original iamge output directory")
+    help="path to the original image output directory")
 ap.add_argument('-oi', '--output_image', required=True,
     help="path to the image output directory")
 ap.add_argument('-ol', '--output_label', required=True,
@@ -27,12 +27,15 @@ args = vars(ap.parse_args())
 
 count = 1
 # TODO: loop through watermarks in watermarks directory, split for training (0.8) and testing (0.2)
-for watermark_path in list(paths.list_images(args["watermark"])):
+for watermark_path in list(paths.list_images(args["watermark"]))[::-1][:6]:
 	print(watermark_path)
 	# load the watermark image, making sure we retain the 4th channel
 	# which contains the alpha transparency
 	watermark = cv2.imread(watermark_path, cv2.IMREAD_UNCHANGED)
 	(wH, wW) = watermark.shape[:2]
+	# cv2.imshow("watermark", watermark)
+	# cv2.waitKey(0)
+	# cv2.destroyAllWindows()
 
 	if args["correct"] > 0:
 		(B, G, R, A) = cv2.split(watermark)
@@ -42,7 +45,7 @@ for watermark_path in list(paths.list_images(args["watermark"])):
 		watermark = cv2.merge([B, G, R, A])
 
 	not_trans_mask = watermark[:, :, 3] != 0
-	watermark[not_trans_mask] = [255, 255, 255, 255]
+	# watermark[not_trans_mask] = [255, 255, 255, 255]
 	orig_watermark = watermark
 	# cv2.imshow("watermark", watermark)
 	# cv2.waitKey(0)
@@ -64,7 +67,7 @@ for watermark_path in list(paths.list_images(args["watermark"])):
 		overlay = np.zeros((h, w, 4), dtype="uint8")
 
 		# NOTE: random size of watermark and random location
-		new_width = randint(30, int(w*3/5))
+		new_width = randint(75, int(w*3/5))
 		watermark = resize(orig_watermark, width=new_width)
 		(wH, wW) = watermark.shape[:2]
 		while int(wH/2) >= h-int(wH/2)-1 or int(wW/2) >= w-int(wW/2)-1:
@@ -78,7 +81,7 @@ for watermark_path in list(paths.list_images(args["watermark"])):
 		output = image.copy()
 
 		# NOTE: Random alpha
-		alpha = uniform(0.1, 0.9)
+		alpha = uniform(0.3, 0.7)
 		cv2.addWeighted(overlay, alpha, output, 1.0, 0, output)
 
 		# write the output image to disk

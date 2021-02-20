@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 
 import cv2
+import tensorflow as tf
 import torch
 import torch.backends.cudnn as cudnn
 from numpy import random
@@ -14,6 +15,11 @@ from utils.general import check_img_size, check_requirements, non_max_suppressio
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
+from removal import WatermarkRemoval
+
+physical_devices = tf.config.list_physical_devices('GPU') 
+tf.config.experimental.set_memory_growth(physical_devices[0], True)
+remover = WatermarkRemoval()
 
 def detect(save_img=False):
     source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
@@ -123,10 +129,12 @@ def detect(save_img=False):
             # Save results (image with detections)
             if save_img:
                 if dataset.mode == 'image':
-                    orig = cv2.imread('data/images/original/'+save_path[save_path.rfind('\\')+1:])
+                    # orig = cv2.imread('data/images/original/'+save_path[save_path.rfind('\\')+1:])
                     for j, (c1, c2) in enumerate(watermarks):
-                        cv2.imwrite(save_path[:-4]+'_'+format(j, '03d')+'.jpg', im0[c1[1]:c2[1], c1[0]:c2[0]])
-                        cv2.imwrite('data/images/crops/'+save_path[save_path.rfind('\\')+1:-4]+'_'+format(j, '03d')+'.jpg', orig[c1[1]:c2[1], c1[0]:c2[0]])
+                        im0 = tf.cast(im0, tf.float32).numpy()
+                        im0[c1[1]:c2[1], c1[0]:c2[0]] = remover.generate_image(im0[c1[1]:c2[1], c1[0]:c2[0]])
+                    cv2.imwrite(save_path[:-4]+'.jpg', im0)
+                        # cv2.imwrite('data/images/crops/'+save_path[save_path.rfind('\\')+1:-4]+'_'+format(j, '03d')+'.jpg', orig)
                 else:  # 'video'
                     if vid_path != save_path:  # new video
                         vid_path = save_path
