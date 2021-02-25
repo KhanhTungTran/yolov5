@@ -60,7 +60,8 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=3):
     # color = color or [random.randint(0, 255) for _ in range(3)]
     # c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
     c1 = max(int(min(x[0], x[2])-abs(x[2]-x[0])*0.25), 0), max(int(min(x[1], x[3])-abs(x[3]-x[1])*0.25), 0)
-    c2 = min(int(max(x[0], x[2])+abs(x[2]-x[0])*0.25), img.shape[1]), min(int(max(x[1], x[3])+abs(x[3]-x[1])*0.25), img.shape[0])
+    # c2 = min(int(max(x[0], x[2])+abs(x[2]-x[0])*0.25), img.shape[1]), min(int(max(x[1], x[3])+abs(x[3]-x[1])*0.25), img.shape[0])
+    c2 = int(x[2]), min(int(max(x[1], x[3])+abs(x[3]-x[1])*0.25), img.shape[0])
     # print(c1, c2, x, img.shape)
     # crop_img = img[c1[1]:c2[1], c1[0]:c2[0]]
     # return crop_img

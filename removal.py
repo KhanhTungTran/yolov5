@@ -125,15 +125,14 @@ class WatermarkRemoval:
         self.generator = Generator()
         discriminator = Discriminator()
 
-        checkpoint_dir = '../pix2pix/training_checkpoints'
+        checkpoint_dir = '../pix2pix/training_checkpoints_update_loss'
         checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
         self.checkpoint = tf.train.Checkpoint(generator_optimizer=generator_optimizer,
-                                        discriminator_optimizer=discriminator_optimizer,
-                                        generator=self.generator,
-                                        discriminator=discriminator)
+                                        generator=self.generator,)
 
         # restoring the latest checkpoint in checkpoint_dir
-        self.checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir)).expect_partial()
+        # self.checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
+        self.checkpoint.restore('../pix2pix/training_checkpoints_update_loss/ckpt-49')
 
     def generate_image(self, inp):
         h, w = inp.shape[:2]

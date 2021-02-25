@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 
 import cv2
+import numpy
 import tensorflow as tf
 import torch
 import torch.backends.cudnn as cudnn
@@ -130,12 +131,18 @@ def detect(save_img=False):
             # Save results (image with detections)
             if save_img:
                 if dataset.mode == 'image':
-                    # orig = cv2.imread('data/images/original/'+save_path[save_path.rfind('\\')+1:])
-                    for j, (c1, c2) in enumerate(watermarks):
-                        im0 = tf.cast(im0, tf.float32).numpy()
-                        im0[c1[1]:c2[1], c1[0]:c2[0]] = remover.generate_image(im0[c1[1]:c2[1], c1[0]:c2[0]])
-                    cv2.imwrite(save_path[:-4]+'.jpg', im0)
-                        # cv2.imwrite('data/images/crops/'+save_path[save_path.rfind('\\')+1:-4]+'_'+format(j, '03d')+'.jpg', orig)
+                    if opt.i_mode == 0:
+                        orig = tf.cast(im0, tf.float32).numpy()
+                        for j, (c1, c2) in enumerate(watermarks):
+                            im0 = tf.cast(im0, tf.float32).numpy()
+                            im0[c1[1]:c2[1], c1[0]:c2[0]] = remover.generate_image(im0[c1[1]:c2[1], c1[0]:c2[0]])
+                        cv2.imwrite(save_path[:-4]+'.jpg', numpy.concatenate((orig, im0), axis=1))
+                    else:
+                        orig = cv2.imread('data/images/original/'+save_path[save_path.rfind('\\')+1:])
+                        for j, (c1, c2) in enumerate(watermarks):
+                            cv2.imwrite(save_path[:-4]+'_'+format(j, '03d')+'.jpg', im0[c1[1]:c2[1], c1[0]:c2[0]])
+                            # cv2.imwrite('data/images/crops/'+save_path[save_path.rfind('\\')+1:-4]+'_'+format(j, '03d')+'.jpg', orig[c1[1]:c2[1], c1[0]:c2[0]])
+                            cv2.imwrite('../pix2pix/data2/test/masks/'+save_path[save_path.rfind('\\')+1:-4]+'_'+format(j, '03d')+'.jpg', orig[c1[1]:c2[1], c1[0]:c2[0]])
                 else:  # 'video'
                     if vid_path != save_path:  # new video
                         vid_path = save_path
@@ -161,8 +168,8 @@ if __name__ == '__main__':
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='data/images', help='source')  # file/folder, 0 for webcam
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
-    parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
+    parser.add_argument('--conf-thres', type=float, default=0.2, help='object confidence threshold')
+    parser.add_argument('--iou-thres', type=float, default=0.55, help='IOU threshold for NMS')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='display results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
@@ -174,6 +181,7 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='runs/detect', help='save results to project/name')
     parser.add_argument('--name', default='exp', help='save results to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
+    parser.add_argument('--i-mode', type=int, default=0, help='inference mode, 0 to merge, 1 to crop')
     opt = parser.parse_args()
     print(opt)
     check_requirements()
